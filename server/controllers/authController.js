@@ -156,8 +156,8 @@ export const updatePassword = async (req, res) => {
     }
 
     // Update password
-    const bcrypt = await import('bcrypt');
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const bcrypt = await import('bcryptjs');
+    const hashedPassword = await bcrypt.default.hash(newPassword, 10);
     
     const { db } = await import('../config/database.js');
     db.prepare('UPDATE users SET password = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?')

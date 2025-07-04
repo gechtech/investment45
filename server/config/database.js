@@ -126,13 +126,13 @@ const initDatabase = async () => {
   // Insert default admin user if not exists
   const adminExists = db.prepare('SELECT id FROM users WHERE email = ?').get('admin@ethioinvest.com');
   if (!adminExists) {
-    const bcrypt = await import('bcrypt');
-    const hashedPassword = await bcrypt.hash('admin123', 10);
+    const bcrypt = await import('bcryptjs');
+    const hashedPassword = await bcrypt.default.hash('admin123', 10);
     
     db.prepare(`
       INSERT INTO users (name, email, phone, password, referralCode, isAdmin)
       VALUES (?, ?, ?, ?, ?, ?)
-    `).run('Admin User', 'admin@ethioinvest.com', '+251911000000', hashedPassword, 'ADMIN001', true);
+    `).run('Admin User', 'admin@ethioinvest.com', '+251911000000', hashedPassword, 'ADMIN001', 1);
   }
 
   // Insert default tasks if not exist
