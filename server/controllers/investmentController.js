@@ -150,21 +150,31 @@ export const processDailyROI = async () => {
   try {
     const activeInvestments = InvestmentModel.getActiveInvestments();
     
+    // Process each investment in a transaction to ensure data consistency
     for (const investment of activeInvestments) {
-      // Add daily ROI to user wallet
-      UserModel.updateWallet(investment.userId, investment.dailyROI, 'add');
+      const transaction = db.transaction(() => {
+        try {
+          // Add daily ROI to user wallet
+          UserModel.updateWallet(investment.userId, investment.dailyROI, 'add');
+          
+          // Log the profit
+          db.prepare(`
+            INSERT INTO profit_logs (userId, investmentId, amount, type)
+            VALUES (?, ?, ?, 'daily_roi')
+          `).run(investment.userId, investment.id, investment.dailyROI);
+          
+          // Update days remaining
+          const newDaysRemaining = investment.daysRemaining - 1;
+          InvestmentModel.updateDaysRemaining(investment.id, newDaysRemaining);
+          
+          console.log(`✅ Processed ROI for investment ${investment.id}: ${investment.dailyROI} ETB`);
+        } catch (error) {
+          console.error(`❌ Error processing investment ${investment.id}:`, error);
+          throw error; // This will cause the transaction to rollback
+        }
+      });
       
-      // Log the profit
-      db.prepare(`
-        INSERT INTO profit_logs (userId, investmentId, amount, type)
-        VALUES (?, ?, ?, 'daily_roi')
-      `).run(investment.userId, investment.id, investment.dailyROI);
-      
-      // Update days remaining
-      const newDaysRemaining = investment.daysRemaining - 1;
-      InvestmentModel.updateDaysRemaining(investment.id, newDaysRemaining);
-      
-      console.log(`✅ Processed ROI for investment ${investment.id}: ${investment.dailyROI} ETB`);
+      transaction(); // Execute the transaction
     }
     
     console.log(`✅ Processed daily ROI for ${activeInvestments.length} investments`);

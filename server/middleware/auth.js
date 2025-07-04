@@ -10,7 +10,11 @@ export const authenticateToken = (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret');
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+      throw new Error('JWT_SECRET environment variable is required');
+    }
+    const decoded = jwt.verify(token, secret);
     const user = UserModel.findById(decoded.userId);
     
     if (!user || !user.isActive) {

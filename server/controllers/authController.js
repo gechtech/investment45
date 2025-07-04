@@ -2,7 +2,11 @@ import jwt from 'jsonwebtoken';
 import UserModel from '../models/UserModel.js';
 
 const generateToken = (userId) => {
-  return jwt.sign({ userId }, process.env.JWT_SECRET || 'fallback-secret', {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error('JWT_SECRET environment variable is required');
+  }
+  return jwt.sign({ userId }, secret, {
     expiresIn: '30d',
   });
 };
